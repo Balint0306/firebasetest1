@@ -1,0 +1,32 @@
+[
+    {
+        "id": 1,
+        "name": "Kedvelt dalok",
+        "cover": "images/liked-songs.png"
+    },
+    {
+        "id": 2,
+        "name": "Indie Pop",
+        "cover": "images/indie-pop.png"
+    },
+    {
+        "id": 3,
+        "name": "Today's Top Hits",
+        "cover": "images/top-hits.png"
+    },
+    {
+        "id": 4,
+        "name": "Chill Mix",
+        "cover": "images/chill-mix.png"
+    },
+    {
+        "id": 5,
+        "name": "Discover Weekly",
+        "cover": "images/discover-weekly.png"
+    },
+    {
+        "id": 6,
+        "name": "Release Radar",
+        "cover": "images/release-radar.png"
+    }
+]

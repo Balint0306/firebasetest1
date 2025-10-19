@@ -1,0 +1,2 @@
+<?php header("Content-Type: text/html; charset=utf-8"); ?>
+<!DOCTYPE html><html lang="en"><head><title>Calculator</title><style>body{font-family: 'Roboto', sans-serif; background-color: #fdfdfd; text-align: center; padding-top: 50px;} h1{color:#333;}</style></head><body><h1>Calculator App</h1><p><i>Content for calculator coming soon...</i></p></body></html>
