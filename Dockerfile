@@ -21,6 +21,11 @@ RUN set -ex; \
     echo "opcache.memory_consumption = 32"; \
   } > "$PHP_INI_DIR/conf.d/cloud-run.ini"
 
+# --- ENABLE .HTACCESS ---
+# The default apache config in the base image disables .htaccess. 
+# We need to enable it to allow our routing rules to work.
+RUN sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
+
 # Copy in custom code from the host machine.
 WORKDIR /var/www/html
 COPY . ./
