@@ -21,12 +21,12 @@
     },
     {
         "id": 5,
-        "name": "Discover Weekly",
-        "cover": "images/discover-weekly.png"
+        "name": "Videóklipek",
+        "cover": "images/release-radar.png"
     },
     {
         "id": 6,
-        "name": "Release Radar",
-        "cover": "images/release-radar.png"
+        "name": "Discover Weekly",
+        "cover": "images/discover-weekly.png"
     }
 ]
