@@ -56,8 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================================================
 
     Promise.all([
-        fetch('api.php?resource=songs').then(res => res.json()),
-        fetch('api.php?resource=playlists').then(res => res.json())
+        fetch('index.php?resource=songs').then(res => res.json()),
+        fetch('index.php?resource=playlists').then(res => res.json())
     ]).then(([songs, playlists]) => {
         songsData = songs;
         playlistsData = playlists.reduce((acc, p) => ({ ...acc, [p.id]: p }), {});
