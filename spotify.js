@@ -51,14 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // INITIALIZATION
     // ==========================================================================
 
-    // Fetch all necessary data when the app loads
     Promise.all([
         fetch('data/songs.json').then(res => res.json()),
         fetch('data/playlists.json').then(res => res.json())
     ]).then(([songs, playlists]) => {
         songsData = songs;
-        playlistsData = playlists;
-        // You could initialize the first view here if needed
+        playlistsData = playlists.reduce((acc, p) => ({ ...acc, [p.id]: p }), {});
     });
 
     // ==========================================================================
@@ -74,9 +72,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     backButton.addEventListener('click', showHomeView);
 
-    // Close video view but keep playing in background
     closeVideoButton.addEventListener('click', () => {
-        videoView.classList.remove('visible');
+        videoView.classList.add('hidden');
+        // When closing the video, show the last active playlist view
+        if (currentPlaylistId) {
+            showPlaylist(currentPlaylistId, false); // false to not reset scroll
+        }
     });
 
     mainNavLinks.forEach(link => {
@@ -86,7 +87,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (targetPage === 'Kezdőlap') {
                 showHomeView();
             }
-            // TODO: Implement other pages like Search, Library
             mainNavLinks.forEach(l => l.classList.remove('active'));
             e.currentTarget.classList.add('active');
         });
@@ -94,15 +94,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showHomeView() {
         playlistView.classList.add('hidden');
+        videoView.classList.add('hidden');
         homeView.classList.remove('hidden');
-        videoView.classList.remove('visible');
     }
-    
+
     function openPlayerFullScreen() {
-         if (activePlayer === 'video') {
-            videoView.classList.add('visible');
-        } else {
-            // TODO: Future enhancement: a full screen view for the audio player
+        if (activePlayer === 'video') {
+            videoView.classList.remove('hidden');
+            playlistView.classList.add('hidden'); 
+            homeView.classList.add('hidden');
         }
     }
 
@@ -110,9 +110,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // VIEW RENDERING
     // ==========================================================================
 
-    function showPlaylist(playlistId) {
-        const playlist = playlistsData.find(p => p.id == playlistId);
-        if (!playlist) return; 
+    function showPlaylist(playlistId, resetScroll = true) {
+        const playlist = playlistsData[playlistId];
+        if (!playlist) return;
 
         const songs = songsData[playlistId] || [];
         currentPlaylistId = playlistId;
@@ -136,8 +136,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         homeView.classList.add('hidden');
+        videoView.classList.add('hidden');
         playlistView.classList.remove('hidden');
-        playlistView.scrollTop = 0;
+        if(resetScroll) playlistView.scrollTop = 0;
     }
 
     // ==========================================================================
@@ -148,9 +149,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPlaylistId = playlistId;
         currentSongIndex = songIndex;
         const item = songsData[playlistId][songIndex];
-        const playlist = playlistsData.find(p => p.id == playlistId);
+        const playlist = playlistsData[playlistId];
 
-        // Stop any currently playing media before starting new one
         audioPlayer.pause();
         videoPlayer.pause();
 
@@ -162,15 +162,19 @@ document.addEventListener('DOMContentLoaded', () => {
             videoPlayer.src = item.url;
             videoPlayer.play();
             updateVideoPlayerUI(item, playlist);
-            videoView.classList.add('visible');
+            
+            videoView.classList.remove('hidden');
+            playlistView.classList.add('hidden');
+            homeView.classList.add('hidden');
+
         } else {
             activePlayer = 'audio';
             audioPlayer.src = item.url;
             audioPlayer.play();
-            videoView.classList.remove('visible'); // Hide video view if audio starts
+            videoView.classList.add('hidden'); // Hide video view if audio starts
         }
         
-        updatePlayPauseIcons(false); // Set all icons to 'pause'
+        updatePlayPauseIcons(false);
     }
 
     function togglePlayPause() {
@@ -183,8 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentPlaylist = songsData[currentPlaylistId];
         if (currentPlaylist && currentSongIndex < currentPlaylist.length - 1) {
             playItem(currentPlaylistId, currentSongIndex + 1);
-        } else {
-             // Optional: Stop or loop when playlist ends
         }
     }
 
@@ -216,19 +218,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updatePlayPauseIcons(isPaused) {
-        const miniIcon = miniPlayPauseBtn.classList;
-        const videoIcon = videoPlayPauseBtn.classList;
-        
-        miniIcon.remove('fa-play', 'fa-pause');
-        videoIcon.remove('fa-play', 'fa-pause');
-
-        if (isPaused) {
-            miniIcon.add('fa-play');
-            videoIcon.add('fa-play');
-        } else {
-            miniIcon.add('fa-pause');
-            videoIcon.add('fa-pause');
-        }
+        const iconState = isPaused ? 'fa-play' : 'fa-pause';
+        miniPlayPauseBtn.classList.remove('fa-play', 'fa-pause');
+        miniPlayPauseBtn.classList.add(iconState);
+        videoPlayPauseBtn.classList.remove('fa-play', 'fa-pause');
+        videoPlayPauseBtn.classList.add(iconState);
     }
     
     function formatTime(seconds) {
@@ -241,27 +235,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // EVENT LISTENERS
     // ==========================================================================
 
-    // --- Mini Player Controls ---
     miniPlayPauseBtn.addEventListener('click', togglePlayPause);
     miniNextButton.addEventListener('click', playNext);
     miniPrevButton.addEventListener('click', playPrevious);
     miniPlayer.addEventListener('click', (e) => {
-        if (e.target.tagName !== 'I') { // Open full screen if not clicking a button
+        if (e.target.tagName !== 'I') { 
             openPlayerFullScreen();
         }
     });
 
-    // --- Full Screen Video Controls ---
     videoPlayPauseBtn.addEventListener('click', togglePlayPause);
     videoNextButton.addEventListener('click', playNext);
     videoPrevButton.addEventListener('click', playPrevious);
 
-    // --- Audio Player Events ---
     audioPlayer.addEventListener('play', () => updatePlayPauseIcons(false));
     audioPlayer.addEventListener('pause', () => updatePlayPauseIcons(true));
     audioPlayer.addEventListener('ended', playNext);
 
-    // --- Video Player Events ---
     videoPlayer.addEventListener('play', () => updatePlayPauseIcons(false));
     videoPlayer.addEventListener('pause', () => updatePlayPauseIcons(true));
     videoPlayer.addEventListener('ended', playNext);
@@ -279,11 +269,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const newTime = (clickX / rect.width) * videoPlayer.duration;
         videoPlayer.currentTime = newTime;
     });
-
-
-    // ==========================================================================
-    // BROWSER MEDIA SESSION INTEGRATION (for lock screen controls)
-    // ==========================================================================
 
     function updateMediaSession(item, playlist) {
         if ('mediaSession' in navigator) {

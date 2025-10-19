@@ -208,9 +208,6 @@ if (isset($_GET['view']) && $_GET['view'] === 'app') {
             font-family: 'Inter', sans-serif;
             overflow: hidden;
         }
-        .phone-wrapper {
-            transform: scale(0.9);
-        }
         .phone {
             width: 410px;
             height: 850px;
@@ -221,6 +218,7 @@ if (isset($_GET['view']) && $_GET['view'] === 'app') {
             position: relative;
             display: flex;
             flex-direction: column;
+            transform: scale(0.9);
         }
         .phone-screen {
             background: #fff;
@@ -311,34 +309,32 @@ if (isset($_GET['view']) && $_GET['view'] === 'app') {
 </head>
 <body>
 
-<div class="phone-wrapper">
-    <div class="phone">
-        <div class="notch"></div>
-        <div class="phone-screen">
-            <div id="home-screen">
-                 <div class="status-bar" style="background: transparent; color: white;">
-                    <div class="time" id="phone-time">9:41</div>
-                    <div class="icons">
-                        <i class="fas fa-signal"></i>
-                        <i class="fas fa-wifi"></i>
-                        <i class="fas fa-battery-full"></i>
-                    </div>
-                </div>
-                <div class="app-grid">
-                    <div class="app-icon" id="spotify-app-icon">
-                        <div class="icon-bg" style="background-color: #1DB954;">
-                            <i class="fab fa-spotify"></i>
-                        </div>
-                        <span>Spotify</span>
-                    </div>
+<div class="phone">
+    <div class="notch"></div>
+    <div class="phone-screen">
+        <div id="home-screen">
+                <div class="status-bar" style="background: transparent; color: white;">
+                <div class="time" id="phone-time">9:41</div>
+                <div class="icons">
+                    <i class="fas fa-signal"></i>
+                    <i class="fas fa-wifi"></i>
+                    <i class="fas fa-battery-full"></i>
                 </div>
             </div>
-            <div id="app-view">
-                 <iframe id="app-iframe" src="about:blank" allow="microphone; camera; autoplay; encrypted-media;"></iframe>
+            <div class="app-grid">
+                <div class="app-icon" id="spotify-app-icon">
+                    <div class="icon-bg" style="background-color: #1DB954;">
+                        <i class="fab fa-spotify"></i>
+                    </div>
+                    <span>Spotify</span>
+                </div>
             </div>
         </div>
-        <div class="home-indicator" id="home-bar"></div>
+        <div id="app-view">
+                <iframe id="app-iframe" src="about:blank" allow="microphone; camera; autoplay; encrypted-media;"></iframe>
+        </div>
     </div>
+    <div class="home-indicator" id="home-bar"></div>
 </div>
 
 <script>
