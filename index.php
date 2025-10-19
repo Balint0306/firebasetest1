@@ -20,7 +20,7 @@
             overflow: hidden;
         }
         .phone-wrapper {
-            transform: scale(0.9); /* Adjust scale if it's too big */
+            transform: scale(0.9);
         }
         .phone {
             width: 410px;
@@ -68,7 +68,7 @@
             width: 100%;
             height: 100%;
             border: none;
-            display: none; /* Initially hidden */
+            /* The parent container will handle visibility */
         }
         #home-screen {
             width: 100%;
@@ -154,7 +154,6 @@
                         </div>
                         <span>Spotify</span>
                     </div>
-                     <!-- You can add more app icons here -->
                 </div>
             </div>
             <div id="app-view" style="display:none; height:100%;">
@@ -170,17 +169,21 @@
         const spotifyIcon = document.getElementById('spotify-app-icon');
         const homeScreen = document.getElementById('home-screen');
         const appView = document.getElementById('app-view');
+        const appIframe = document.getElementById('app-iframe'); // Get the iframe
         const homeBar = document.getElementById('home-bar');
         const timeEl = document.getElementById('phone-time');
 
         function openSpotify() {
             homeScreen.style.display = 'none';
-            appView.style.display = 'block';
+            appView.style.display = 'block'; // Show the iframe's container
+            // No need to change appIframe.style.display as its visibility is now controlled by its parent
         }
 
         function goHome() {
             appView.style.display = 'none';
-            homeScreen.style.display = 'flex'; // Use flex because it's a flex container
+            homeScreen.style.display = 'flex';
+            // Reload the iframe to stop any playing music/video when going home
+            appIframe.src = appIframe.src;
         }
         
         function updateTime() {
