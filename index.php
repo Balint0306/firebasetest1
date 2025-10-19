@@ -198,66 +198,30 @@ if (isset($_GET['view']) && $_GET['view'] === 'app') {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
     <style>
-        /* Basic Setup */
-        html, body {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-        }
         body {
             background-color: #333;
             display: flex;
             justify-content: center;
             align-items: center;
+            height: 100vh;
             margin: 0;
             font-family: 'Inter', sans-serif;
-            padding: 1rem;
-            box-sizing: border-box;
+            overflow: hidden;
         }
-
-        /* Phone Container */
+        .phone-wrapper {
+            transform: scale(0.9);
+        }
         .phone {
-            /* Proportions and Sizing */
-            aspect-ratio: 410 / 850;
-            width: auto;
-            height: 100%;
-            max-width: 410px;
-            max-height: 850px;
-
-            /* Appearance */
+            width: 410px;
+            height: 850px;
             background: #111;
-            border: 12px solid #000;
             border-radius: 60px;
+            border: 12px solid #000;
             box-shadow: 0 30px 80px rgba(0,0,0,0.6);
-            
-            /* Layout */
             position: relative;
             display: flex;
             flex-direction: column;
-            margin: auto;
         }
-        .phone-wrapper { }
-
-        /* Media Query for Mobile Devices */
-        @media (max-width: 450px), (max-height: 870px) {
-             body {
-                padding: 0;
-             }
-            .phone {
-                width: 100%;
-                height: 100%;
-                max-width: none;
-                max-height: none;
-                border-radius: 0;
-                border: none;
-            }
-             .phone-screen {
-                border-radius: 0;
-            }
-        }
-        
-        /* --- Original Inner Styles (mostly unchanged) --- */
-
         .phone-screen {
             background: #fff;
             flex-grow: 1;
@@ -277,11 +241,11 @@ if (isset($_GET['view']) && $_GET['view'] === 'app') {
             height: 100%;
             background: linear-gradient(to bottom, #8e44ad, #3498db);
             padding: 40px 20px;
-            box-sizing: border-box; /* Good practice */
             display: flex;
             flex-direction: column;
             z-index: 1;
             position: absolute;
+            box-sizing: border-box;
         }
         #app-view {
             display:none; 
