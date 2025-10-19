@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const homeView = document.getElementById('home-view');
     const playlistView = document.getElementById('playlist-view');
     const videoView = document.getElementById('video-view');
+    const settingsView = document.getElementById('settings-view');
 
     // --- MEDIA PLAYERS ---
     const audioPlayer = document.getElementById('audio-player');
@@ -12,6 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const clickableItems = document.querySelectorAll('.playlist-item, .shelf-item');
     const backButton = document.getElementById('back-button');
     const mainNavLinks = document.querySelectorAll('.nav-item');
+    const settingsButton = document.getElementById('settings-button');
+    const settingsBackButton = document.getElementById('settings-back-button');
 
     // --- PLAYLIST VIEW ELEMENTS ---
     const playlistCover = document.getElementById('playlist-cover');
@@ -46,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPlaylistId = null;
     let currentSongIndex = -1;
     let activePlayer = null; // 'audio' or 'video'
+    let lastActiveView = homeView; // To remember which view to return to
 
     // ==========================================================================
     // INITIALIZATION
@@ -71,13 +75,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     backButton.addEventListener('click', showHomeView);
+    settingsButton.addEventListener('click', showSettingsView);
+    settingsBackButton.addEventListener('click', () => showView(lastActiveView));
 
     closeVideoButton.addEventListener('click', () => {
         videoView.classList.add('hidden');
-        // When closing the video, show the last active playlist view
-        if (currentPlaylistId) {
-            showPlaylist(currentPlaylistId, false); // false to not reset scroll
-        }
+        showView(playlistView);
     });
 
     mainNavLinks.forEach(link => {
@@ -91,18 +94,24 @@ document.addEventListener('DOMContentLoaded', () => {
             e.currentTarget.classList.add('active');
         });
     });
+    
+    function showView(viewToShow) {
+        [homeView, playlistView, videoView, settingsView].forEach(v => v.classList.add('hidden'));
+        viewToShow.classList.remove('hidden');
+        lastActiveView = viewToShow;
+    }
 
     function showHomeView() {
-        playlistView.classList.add('hidden');
-        videoView.classList.add('hidden');
-        homeView.classList.remove('hidden');
+        showView(homeView);
+    }
+    
+    function showSettingsView() {
+        showView(settingsView);
     }
 
     function openPlayerFullScreen() {
         if (activePlayer === 'video') {
-            videoView.classList.remove('hidden');
-            playlistView.classList.add('hidden'); 
-            homeView.classList.add('hidden');
+            showView(videoView);
         }
     }
 
@@ -135,9 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
             songList.appendChild(songEl);
         });
 
-        homeView.classList.add('hidden');
-        videoView.classList.add('hidden');
-        playlistView.classList.remove('hidden');
+        showView(playlistView);
         if(resetScroll) playlistView.scrollTop = 0;
     }
 
@@ -159,19 +166,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (item.type === 'video') {
             activePlayer = 'video';
-            videoPlayer.src = item.url;
-            videoPlayer.play();
+            showView(videoView);
             updateVideoPlayerUI(item, playlist);
             
-            videoView.classList.remove('hidden');
-            playlistView.classList.add('hidden');
-            homeView.classList.add('hidden');
+            videoPlayer.src = item.url;
+            const playPromise = videoPlayer.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.error("Autoplay was prevented. The user needs to interact directly with the player.", error);
+                    updatePlayPauseIcons(true); // Show play icon so user can start playback
+                });
+            }
 
         } else {
             activePlayer = 'audio';
             audioPlayer.src = item.url;
             audioPlayer.play();
-            videoView.classList.add('hidden'); // Hide video view if audio starts
+            // If user was in video view, move them to playlist view
+            if(lastActiveView === videoView) {
+                showView(playlistView);
+            }
         }
         
         updatePlayPauseIcons(false);
@@ -180,7 +194,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function togglePlayPause() {
         if (!activePlayer) return;
         const player = (activePlayer === 'video') ? videoPlayer : audioPlayer;
-        player.paused ? player.play() : player.pause();
+        if (player.paused) {
+             const playPromise = player.play();
+             if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.error("Play call was interrupted or failed.", error);
+                });
+            }
+        } else {
+            player.pause();
+        }
     }
 
     function playNext() {
@@ -201,10 +224,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================================================
-    // UI UPDATES
+    // UI UPDATES & EVENT LISTENERS
     // ==========================================================================
 
-    function updateMiniPlayerUI(title, artist, albumArt, type) {
+    function updateMiniPlayerUI(title, artist, albumArt) {
         currentSongEl.textContent = title;
         currentArtistEl.textContent = artist;
         currentAlbumArt.src = albumArt;
@@ -219,10 +242,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updatePlayPauseIcons(isPaused) {
         const iconState = isPaused ? 'fa-play' : 'fa-pause';
-        miniPlayPauseBtn.classList.remove('fa-play', 'fa-pause');
-        miniPlayPauseBtn.classList.add(iconState);
-        videoPlayPauseBtn.classList.remove('fa-play', 'fa-pause');
-        videoPlayPauseBtn.classList.add(iconState);
+        miniPlayPauseBtn.className = `fas ${iconState}`;
+        videoPlayPauseBtn.className = `fas ${iconState}`;
     }
     
     function formatTime(seconds) {
@@ -230,10 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const sec = Math.floor(seconds % 60).toString().padStart(2, '0');
         return `${min}:${sec}`;
     }
-
-    // ==========================================================================
-    // EVENT LISTENERS
-    // ==========================================================================
 
     miniPlayPauseBtn.addEventListener('click', togglePlayPause);
     miniNextButton.addEventListener('click', playNext);
@@ -248,13 +265,15 @@ document.addEventListener('DOMContentLoaded', () => {
     videoNextButton.addEventListener('click', playNext);
     videoPrevButton.addEventListener('click', playPrevious);
 
-    audioPlayer.addEventListener('play', () => updatePlayPauseIcons(false));
-    audioPlayer.addEventListener('pause', () => updatePlayPauseIcons(true));
-    audioPlayer.addEventListener('ended', playNext);
+    const setupPlayerEvents = (player) => {
+        player.addEventListener('play', () => updatePlayPauseIcons(false));
+        player.addEventListener('pause', () => updatePlayPauseIcons(true));
+        player.addEventListener('ended', playNext);
+    };
 
-    videoPlayer.addEventListener('play', () => updatePlayPauseIcons(false));
-    videoPlayer.addEventListener('pause', () => updatePlayPauseIcons(true));
-    videoPlayer.addEventListener('ended', playNext);
+    setupPlayerEvents(audioPlayer);
+    setupPlayerEvents(videoPlayer);
+
     videoPlayer.addEventListener('loadedmetadata', () => {
         videoDuration.textContent = formatTime(videoPlayer.duration);
     });
