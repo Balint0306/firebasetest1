@@ -56,11 +56,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================================================
 
     Promise.all([
-        fetch('data/songs.json').then(res => res.json()),
-        fetch('data/playlists.json').then(res => res.json())
+        fetch('api.php?resource=songs').then(res => res.json()),
+        fetch('api.php?resource=playlists').then(res => res.json())
     ]).then(([songs, playlists]) => {
         songsData = songs;
         playlistsData = playlists.reduce((acc, p) => ({ ...acc, [p.id]: p }), {});
+    }).catch(error => {
+        console.error("Error loading initial data:", error);
+        alert("Hiba történt az alkalmazás adatainak betöltése közben. Kérjük, frissítse az oldalt.");
     });
 
     // ==========================================================================
@@ -153,6 +156,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================================================
 
     function playItem(playlistId, songIndex) {
+        // First, check if data is loaded
+        if (!songsData[playlistId] || !playlistsData[playlistId]) {
+            console.error("Data not loaded yet, trying again in 250ms.");
+            setTimeout(() => playItem(playlistId, songIndex), 250);
+            return;
+        }
+
         currentPlaylistId = playlistId;
         currentSongIndex = songIndex;
         const item = songsData[playlistId][songIndex];
