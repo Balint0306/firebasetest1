@@ -56,8 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================================================
 
     Promise.all([
-        fetch('index.php?resource=songs').then(res => res.json()),
-        fetch('index.php?resource=playlists').then(res => res.json())
+        fetch('data/songs.json').then(res => res.json()),
+        fetch('data/playlists.json').then(res => res.json())
     ]).then(([songs, playlists]) => {
         songsData = songs;
         playlistsData = playlists.reduce((acc, p) => ({ ...acc, [p.id]: p }), {});
@@ -73,7 +73,9 @@ document.addEventListener('DOMContentLoaded', () => {
     clickableItems.forEach(item => {
         item.addEventListener('click', (e) => {
             const playlistId = e.currentTarget.dataset.playlistId;
-            showPlaylist(playlistId);
+            if (songsData && playlistsData) {
+                showPlaylist(playlistId);
+            }
         });
     });
 
@@ -284,7 +286,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setupPlayerEvents(audioPlayer);
     setupPlayerEvents(videoPlayer);
 
-    // --- NEW ROBUST ERROR HANDLING FOR VIDEO ---
     videoPlayer.addEventListener('error', (e) => {
         console.error("--- VIDEO PLAYER ERROR ---");
         console.error("Error Event:", e);
@@ -292,30 +293,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (error) {
             console.error("Error Code:", error.code);
             console.error("Error Message:", error.message);
-            switch (error.code) {
-                case error.MEDIA_ERR_ABORTED:
-                    console.error('The video playback was aborted.');
-                    break;
-                case error.MEDIA_ERR_NETWORK:
-                    console.error('A network error caused the video download to fail.');
-                    break;
-                case error.MEDIA_ERR_DECODE:
-                    console.error('The video playback was aborted due to a corruption problem or unsupported features.');
-                    break;
-                case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                    console.error('The video could not be loaded, either because the server or network failed or because the format is not supported.');
-                    break;
-                default:
-                    console.error('An unknown error occurred.');
-                    break;
-            }
         }
-        // Non-blocking alert for the user
         setTimeout(() => {
-            alert("Hiba a videó lejátszása közben. A forrás hibás vagy nem elérhető. Az alkalmazás működőképes marad.");
+            alert("Hiba a videó lejátszása közben. A forrás hibás vagy nem elérhető.");
         }, 1);
-        updatePlayPauseIcons(true); // Show play icon to allow user to try again or play something else
-        showView(playlistView); // Go back to the playlist view to prevent being stuck
+        updatePlayPauseIcons(true);
+        showView(playlistView);
     });
 
     videoPlayer.addEventListener('stalled', () => {
@@ -325,7 +308,6 @@ document.addEventListener('DOMContentLoaded', () => {
     videoPlayer.addEventListener('waiting', () => {
         console.info("Video waiting: Playback has stopped temporarily due to lack of data (buffering).");
     });
-    // --- END OF NEW ERROR HANDLING ---
 
     videoPlayer.addEventListener('loadedmetadata', () => {
         videoDuration.textContent = formatTime(videoPlayer.duration);
