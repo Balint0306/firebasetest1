@@ -37,14 +37,18 @@
             </section>
 
             <section class="made-for-you">
-                <h2>Neked készült válogatások</h2>
+                <h2>Videóklipek</h2>
                 <div class="shelf">
-                    <?php for ($i = 4; $i < count($playlists); $i++): ?>
-                         <div class="shelf-item" data-playlist-id="<?php echo $playlists[$i]['id']; ?>">
-                            <img src="<?php echo $playlists[$i]['cover']; ?>" alt="<?php echo $playlists[$i]['name']; ?>">
-                            <p class="shelf-item-title"><?php echo $playlists[$i]['name']; ?></p>
-                        </div>
-                    <?php endfor; ?>
+                    <?php 
+                        $video_playlist = null;
+                        foreach ($playlists as $p) { if ($p['id'] == 5) { $video_playlist = $p; break; } }
+                        if ($video_playlist):
+                    ?>
+                    <div class="shelf-item" data-playlist-id="<?php echo $video_playlist['id']; ?>">
+                        <img src="<?php echo $video_playlist['cover']; ?>" alt="<?php echo $video_playlist['name']; ?>">
+                        <p class="shelf-item-title"><?php echo $video_playlist['name']; ?></p>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </section>
 
@@ -55,10 +59,16 @@
                         <img src="images/liked-songs.png" alt="Kedvelt dalok">
                         <p class="shelf-item-title">Kedvelt dalok</p>
                     </div>
-                    <div class="shelf-item" data-playlist-id="3">
-                        <img src="images/top-hits.png" alt="Today's Top Hits">
-                        <p class="shelf-item-title">Today's Top Hits</p>
+                    <?php 
+                        $discover_weekly = null;
+                        foreach ($playlists as $p) { if ($p['id'] == 6) { $discover_weekly = $p; break; } }
+                        if ($discover_weekly):
+                    ?>
+                    <div class="shelf-item" data-playlist-id="<?php echo $discover_weekly['id']; ?>">
+                        <img src="<?php echo $discover_weekly['cover']; ?>" alt="<?php echo $discover_weekly['name']; ?>">
+                        <p class="shelf-item-title"><?php echo $discover_weekly['name']; ?></p>
                     </div>
+                    <?php endif; ?>
                 </div>
             </section>
         </main>
@@ -77,8 +87,32 @@
 
         <!-- Video Player View -->
         <section id="video-view" class="hidden">
+             <div class="video-header">
+                <button id="close-video-button"><i class="fas fa-chevron-down"></i></button>
+                <div class="video-title-container">
+                    <span class="video-playing-from">Lejátszás innen:</span>
+                    <span id="video-playlist-name"></span>
+                </div>
+            </div>
             <video id="video-player" playsinline></video>
-            <button id="close-video-button"><i class="fas fa-chevron-down"></i></button>
+            <div class="video-info">
+                <h2 id="video-title"></h2>
+                <p id="video-artist"></p>
+            </div>
+            <div class="video-controls">
+                <div class="progress-bar-container" id="video-progress-bar-container">
+                    <div id="video-progress" class="progress"></div>
+                </div>
+                <div class="time-container">
+                    <span id="video-current-time">0:00</span>
+                    <span id="video-duration">0:00</span>
+                </div>
+                <div class="main-controls">
+                    <i id="video-prev-button" class="fas fa-step-backward"></i>
+                    <i id="video-play-pause-button" class="fas fa-pause"></i>
+                    <i id="video-next-button" class="fas fa-step-forward"></i>
+                </div>
+            </div>
         </section>
 
         <footer>

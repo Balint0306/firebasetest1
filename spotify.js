@@ -1,52 +1,70 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Views
+    // --- VIEWS ---
     const homeView = document.getElementById('home-view');
     const playlistView = document.getElementById('playlist-view');
     const videoView = document.getElementById('video-view');
 
-    // Media players
+    // --- MEDIA PLAYERS ---
     const audioPlayer = document.getElementById('audio-player');
     const videoPlayer = document.getElementById('video-player');
 
-    // Clickable items
+    // --- BUTTONS & CLICKABLE ITEMS ---
     const clickableItems = document.querySelectorAll('.playlist-item, .shelf-item');
     const backButton = document.getElementById('back-button');
-    const closeVideoButton = document.getElementById('close-video-button');
     const mainNavLinks = document.querySelectorAll('.nav-item');
 
-    // Playlist view elements
+    // --- PLAYLIST VIEW ELEMENTS ---
     const playlistCover = document.getElementById('playlist-cover');
     const playlistName = document.getElementById('playlist-name');
     const songList = document.getElementById('song-list');
 
-    // Now Playing bar elements (Mini Player)
+    // --- MINI PLAYER (NOW PLAYING) ELEMENTS ---
     const miniPlayer = document.getElementById('mini-player');
     const currentAlbumArt = document.getElementById('current-album-art');
     const currentSongEl = document.getElementById('current-song');
     const currentArtistEl = document.getElementById('current-artist');
-    const playPauseBtn = document.getElementById('play-pause-button');
-    const prevButton = document.getElementById('prev-button');
-    const nextButton = document.getElementById('next-button');
+    const miniPlayPauseBtn = document.getElementById('play-pause-button');
+    const miniPrevButton = document.getElementById('prev-button');
+    const miniNextButton = document.getElementById('next-button');
 
-    // Data stores
+    // --- VIDEO VIEW ELEMENTS ---
+    const closeVideoButton = document.getElementById('close-video-button');
+    const videoPlaylistName = document.getElementById('video-playlist-name');
+    const videoTitle = document.getElementById('video-title');
+    const videoArtist = document.getElementById('video-artist');
+    const videoPlayPauseBtn = document.getElementById('video-play-pause-button');
+    const videoNextButton = document.getElementById('video-next-button');
+    const videoPrevButton = document.getElementById('video-prev-button');
+    const videoProgressBarContainer = document.getElementById('video-progress-bar-container');
+    const videoProgress = document.getElementById('video-progress');
+    const videoCurrentTime = document.getElementById('video-current-time');
+    const videoDuration = document.getElementById('video-duration');
+
+    // --- DATA STORES & STATE ---
     let songsData = {};
     let playlistsData = {};
-    
-    // Player state
     let currentPlaylistId = null;
     let currentSongIndex = -1;
     let activePlayer = null; // 'audio' or 'video'
 
-    // --- DATA FETCHING ---
+    // ==========================================================================
+    // INITIALIZATION
+    // ==========================================================================
+
+    // Fetch all necessary data when the app loads
     Promise.all([
         fetch('data/songs.json').then(res => res.json()),
         fetch('data/playlists.json').then(res => res.json())
     ]).then(([songs, playlists]) => {
         songsData = songs;
         playlistsData = playlists;
+        // You could initialize the first view here if needed
     });
 
-    // --- NAVIGATION ---
+    // ==========================================================================
+    // NAVIGATION
+    // ==========================================================================
+
     clickableItems.forEach(item => {
         item.addEventListener('click', (e) => {
             const playlistId = e.currentTarget.dataset.playlistId;
@@ -55,32 +73,48 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     backButton.addEventListener('click', showHomeView);
+
+    // Close video view but keep playing in background
+    closeVideoButton.addEventListener('click', () => {
+        videoView.classList.remove('visible');
+    });
+
     mainNavLinks.forEach(link => {
         link.addEventListener('click', (e) => {
-            // Basic navigation simulation
-            if (e.currentTarget.querySelector('span').textContent === 'Kezdőlap') {
+            e.preventDefault();
+            const targetPage = e.currentTarget.querySelector('span').textContent;
+            if (targetPage === 'Kezdőlap') {
                 showHomeView();
             }
+            // TODO: Implement other pages like Search, Library
+            mainNavLinks.forEach(l => l.classList.remove('active'));
+            e.currentTarget.classList.add('active');
         });
     });
 
     function showHomeView() {
-        homeView.classList.remove('hidden');
         playlistView.classList.add('hidden');
-        videoView.classList.add('hidden');
+        homeView.classList.remove('hidden');
+        videoView.classList.remove('visible');
+    }
+    
+    function openPlayerFullScreen() {
+         if (activePlayer === 'video') {
+            videoView.classList.add('visible');
+        } else {
+            // TODO: Future enhancement: a full screen view for the audio player
+        }
     }
 
-    closeVideoButton.addEventListener('click', () => {
-        videoPlayer.pause();
-        videoView.classList.add('hidden');
-        playlistView.classList.remove('hidden'); 
-    });
+    // ==========================================================================
+    // VIEW RENDERING
+    // ==========================================================================
 
-    // --- VIEW RENDERING ---
     function showPlaylist(playlistId) {
         const playlist = playlistsData.find(p => p.id == playlistId);
+        if (!playlist) return; 
+
         const songs = songsData[playlistId] || [];
-        
         currentPlaylistId = playlistId;
 
         playlistCover.src = playlist.cover;
@@ -97,9 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 ${song.type === 'video' ? '<i class="fas fa-video"></i>' : '<i class="fas fa-ellipsis-v"></i>'}
             `;
-            songEl.addEventListener('click', () => {
-                playSongFromPlaylist(playlistId, index);
-            });
+            songEl.addEventListener('click', () => playItem(playlistId, index));
             songList.appendChild(songEl);
         });
 
@@ -108,116 +140,156 @@ document.addEventListener('DOMContentLoaded', () => {
         playlistView.scrollTop = 0;
     }
 
-    // --- PLAYER LOGIC ---
-    function playSongFromPlaylist(playlistId, songIndex) {
+    // ==========================================================================
+    // PLAYER LOGIC (The Core)
+    // ==========================================================================
+
+    function playItem(playlistId, songIndex) {
         currentPlaylistId = playlistId;
         currentSongIndex = songIndex;
-        const song = songsData[playlistId][songIndex];
+        const item = songsData[playlistId][songIndex];
+        const playlist = playlistsData.find(p => p.id == playlistId);
 
-        // Stop any currently playing media
+        // Stop any currently playing media before starting new one
         audioPlayer.pause();
         videoPlayer.pause();
-        
-        const playlist = playlistsData.find(p => p.id == playlistId);
-        updateMiniPlayerUI(song.title, song.artist, playlist.cover);
-        updateMediaSession(song, playlist);
 
-        if (song.type === 'video') {
+        updateMiniPlayerUI(item.title, item.artist, playlist.cover, item.type);
+        updateMediaSession(item, playlist);
+
+        if (item.type === 'video') {
             activePlayer = 'video';
-            videoPlayer.src = song.url;
+            videoPlayer.src = item.url;
             videoPlayer.play();
-            videoView.classList.remove('hidden');
-            playlistView.classList.add('hidden');
+            updateVideoPlayerUI(item, playlist);
+            videoView.classList.add('visible');
         } else {
             activePlayer = 'audio';
-            audioPlayer.src = song.url;
+            audioPlayer.src = item.url;
             audioPlayer.play();
+            videoView.classList.remove('visible'); // Hide video view if audio starts
         }
         
-        setPlayIcon(false); // Set to pause icon
-    }
-
-    function updateMiniPlayerUI(title, artist, albumArt) {
-        currentSongEl.textContent = title;
-        currentArtistEl.textContent = artist;
-        currentAlbumArt.src = albumArt;
-        miniPlayer.classList.remove('hidden');
-    }
-    
-    function setPlayIcon(isPaused) {
-        if (isPaused) {
-            playPauseBtn.classList.remove('fa-pause');
-            playPauseBtn.classList.add('fa-play');
-        } else {
-            playPauseBtn.classList.remove('fa-play');
-            playPauseBtn.classList.add('fa-pause');
-        }
+        updatePlayPauseIcons(false); // Set all icons to 'pause'
     }
 
     function togglePlayPause() {
-         if (!activePlayer) return;
-
+        if (!activePlayer) return;
         const player = (activePlayer === 'video') ? videoPlayer : audioPlayer;
-
-        if (player.paused) {
-            player.play();
-        } else {
-            player.pause();
-        }
+        player.paused ? player.play() : player.pause();
     }
 
     function playNext() {
         const currentPlaylist = songsData[currentPlaylistId];
         if (currentPlaylist && currentSongIndex < currentPlaylist.length - 1) {
-            playSongFromPlaylist(currentPlaylistId, currentSongIndex + 1);
+            playItem(currentPlaylistId, currentSongIndex + 1);
+        } else {
+             // Optional: Stop or loop when playlist ends
         }
     }
 
     function playPrevious() {
         if (currentSongIndex > 0) {
-            playSongFromPlaylist(currentPlaylistId, currentSongIndex - 1);
-        } else { // If first song, restart it
+            playItem(currentPlaylistId, currentSongIndex - 1);
+        } else { 
             const player = (activePlayer === 'video') ? videoPlayer : audioPlayer;
             player.currentTime = 0;
             player.play();
         }
     }
 
-    // --- EVENT LISTENERS ---
-    playPauseBtn.addEventListener('click', togglePlayPause);
-    nextButton.addEventListener('click', playNext);
-    prevButton.addEventListener('click', playPrevious);
-    
-    miniPlayer.addEventListener('click', (e) => {
-        // Don't do anything if a control button was clicked
-        if (e.target.tagName === 'I') return;
+    // ==========================================================================
+    // UI UPDATES
+    // ==========================================================================
 
-        if (activePlayer === 'video') {
-            videoView.classList.remove('hidden');
-            playlistView.classList.add('hidden'); 
-            homeView.classList.add('hidden');
+    function updateMiniPlayerUI(title, artist, albumArt, type) {
+        currentSongEl.textContent = title;
+        currentArtistEl.textContent = artist;
+        currentAlbumArt.src = albumArt;
+        miniPlayer.classList.remove('hidden');
+    }
+
+    function updateVideoPlayerUI(item, playlist) {
+        videoPlaylistName.textContent = playlist.name;
+        videoTitle.textContent = item.title;
+        videoArtist.textContent = item.artist;
+    }
+
+    function updatePlayPauseIcons(isPaused) {
+        const miniIcon = miniPlayPauseBtn.classList;
+        const videoIcon = videoPlayPauseBtn.classList;
+        
+        miniIcon.remove('fa-play', 'fa-pause');
+        videoIcon.remove('fa-play', 'fa-pause');
+
+        if (isPaused) {
+            miniIcon.add('fa-play');
+            videoIcon.add('fa-play');
+        } else {
+            miniIcon.add('fa-pause');
+            videoIcon.add('fa-pause');
+        }
+    }
+    
+    function formatTime(seconds) {
+        const min = Math.floor(seconds / 60);
+        const sec = Math.floor(seconds % 60).toString().padStart(2, '0');
+        return `${min}:${sec}`;
+    }
+
+    // ==========================================================================
+    // EVENT LISTENERS
+    // ==========================================================================
+
+    // --- Mini Player Controls ---
+    miniPlayPauseBtn.addEventListener('click', togglePlayPause);
+    miniNextButton.addEventListener('click', playNext);
+    miniPrevButton.addEventListener('click', playPrevious);
+    miniPlayer.addEventListener('click', (e) => {
+        if (e.target.tagName !== 'I') { // Open full screen if not clicking a button
+            openPlayerFullScreen();
         }
     });
 
-    audioPlayer.addEventListener('play', () => setPlayIcon(false));
-    audioPlayer.addEventListener('pause', () => setPlayIcon(true));
+    // --- Full Screen Video Controls ---
+    videoPlayPauseBtn.addEventListener('click', togglePlayPause);
+    videoNextButton.addEventListener('click', playNext);
+    videoPrevButton.addEventListener('click', playPrevious);
+
+    // --- Audio Player Events ---
+    audioPlayer.addEventListener('play', () => updatePlayPauseIcons(false));
+    audioPlayer.addEventListener('pause', () => updatePlayPauseIcons(true));
     audioPlayer.addEventListener('ended', playNext);
 
-    videoPlayer.addEventListener('play', () => setPlayIcon(false));
-    videoPlayer.addEventListener('pause', () => setPlayIcon(true));
-    videoPlayer.addEventListener('ended', () => {
-        playNext();
-        // After video ends, hide it and show playlist
-        videoView.classList.add('hidden');
-        playlistView.classList.remove('hidden');
+    // --- Video Player Events ---
+    videoPlayer.addEventListener('play', () => updatePlayPauseIcons(false));
+    videoPlayer.addEventListener('pause', () => updatePlayPauseIcons(true));
+    videoPlayer.addEventListener('ended', playNext);
+    videoPlayer.addEventListener('loadedmetadata', () => {
+        videoDuration.textContent = formatTime(videoPlayer.duration);
+    });
+    videoPlayer.addEventListener('timeupdate', () => {
+        const progress = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+        videoProgress.style.width = `${progress}%`;
+        videoCurrentTime.textContent = formatTime(videoPlayer.currentTime);
+    });
+    videoProgressBarContainer.addEventListener('click', (e) => {
+        const rect = videoProgressBarContainer.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const newTime = (clickX / rect.width) * videoPlayer.duration;
+        videoPlayer.currentTime = newTime;
     });
 
-    // --- MEDIA SESSION API INTEGRATION ---
-    function updateMediaSession(song, playlist) {
+
+    // ==========================================================================
+    // BROWSER MEDIA SESSION INTEGRATION (for lock screen controls)
+    // ==========================================================================
+
+    function updateMediaSession(item, playlist) {
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
-                title: song.title,
-                artist: song.artist,
+                title: item.title,
+                artist: item.artist,
                 album: playlist.name,
                 artwork: [
                     { src: playlist.cover, sizes: '256x256', type: 'image/png' },
