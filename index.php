@@ -42,33 +42,10 @@
             display: flex;
             flex-direction: column;
         }
-        .status-bar {
-            height: 40px;
-            background: #f0f0f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 25px;
-            color: #333;
-            font-weight: 500;
-            font-size: 15px;
-            z-index: 100;
-        }
-        .status-bar .time {
-            font-weight: 700;
-        }
-        .status-bar .icons i {
-            margin-left: 6px;
-        }
-        .screen-content {
-            flex-grow: 1;
-            position: relative;
-        }
         #app-iframe {
             width: 100%;
             height: 100%;
             border: none;
-            /* The parent container will handle visibility */
         }
         #home-screen {
             width: 100%;
@@ -77,6 +54,15 @@
             padding: 40px 20px;
             display: flex;
             flex-direction: column;
+            z-index: 1;
+            position: absolute;
+        }
+        #app-view {
+            display:none; 
+            height:100%;
+            z-index: 2;
+            position: absolute;
+            width: 100%;
         }
         .app-grid {
              display: grid;
@@ -129,6 +115,7 @@
             height: 5px;
             background: rgba(255,255,255,0.5);
             border-radius: 5px;
+            z-index: 201;
         }
     </style>
 </head>
@@ -156,8 +143,8 @@
                     </div>
                 </div>
             </div>
-            <div id="app-view" style="display:none; height:100%;">
-                 <iframe id="app-iframe" src="spotify.php" allow="microphone; camera; autoplay; encrypted-media;"></iframe>
+            <div id="app-view">
+                 <iframe id="app-iframe" src="about:blank" allow="microphone; camera; autoplay; encrypted-media;"></iframe>
             </div>
         </div>
         <div class="home-indicator" id="home-bar"></div>
@@ -169,21 +156,22 @@
         const spotifyIcon = document.getElementById('spotify-app-icon');
         const homeScreen = document.getElementById('home-screen');
         const appView = document.getElementById('app-view');
-        const appIframe = document.getElementById('app-iframe'); // Get the iframe
+        const appIframe = document.getElementById('app-iframe');
         const homeBar = document.getElementById('home-bar');
         const timeEl = document.getElementById('phone-time');
 
         function openSpotify() {
+            // Force reload by adding a unique timestamp (cache buster)
+            appIframe.src = 'spotify.php?v=' + new Date().getTime();
             homeScreen.style.display = 'none';
-            appView.style.display = 'block'; // Show the iframe's container
-            // No need to change appIframe.style.display as its visibility is now controlled by its parent
+            appView.style.display = 'block';
         }
 
         function goHome() {
             appView.style.display = 'none';
             homeScreen.style.display = 'flex';
-            // Reload the iframe to stop any playing music/video when going home
-            appIframe.src = appIframe.src;
+            // Clear the iframe to stop music and free up resources
+            appIframe.src = 'about:blank';
         }
         
         function updateTime() {
