@@ -3,6 +3,10 @@
 # https://hub.docker.com/_/php
 FROM php:8.0-apache
 
+# --- ENABLE APACHE REWRITE MODULE ---
+# This is required for .htaccess rewrite rules to work.
+RUN a2enmod rewrite
+
 # Configure PHP for Cloud Run.
 # Precompile PHP code with opcache.
 RUN docker-php-ext-install -j "$(nproc)" opcache
